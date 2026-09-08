@@ -25,7 +25,14 @@ export default function Creator({
     pendingMode.current = mode;
     const input = inputRef.current;
     if (!input) return;
-    input.setAttribute("capture", mode === "camera" ? "environment" : "");
+    if (mode === "camera") {
+      // 打开相机
+      input.setAttribute("capture", "environment");
+    } else {
+      // 打开相册：必须移除 capture，否则 iOS/部分安卓会强制拉起相机
+      input.removeAttribute("capture");
+    }
+    if (!mode) input.removeAttribute("capture");
     input.value = "";
     input.click();
   };
