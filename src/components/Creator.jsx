@@ -1,8 +1,8 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import FramePreview from "./FramePreview.jsx";
 import { FRAME_INFO, FRAME_TYPES } from "../config/themes.js";
 import { getThemeBg, THUMBS } from "../lib/media.js";
-import { captureFrame, fileToDataUrl } from "../lib/generate.js";
+import { captureFrame, fileToDataUrl, urlToDataUrl } from "../lib/generate.js";
 
 export default function Creator({
   theme,
@@ -18,8 +18,23 @@ export default function Creator({
   const frameRef = useRef(null);
   const pendingMode = useRef("album");
   const [busy, setBusy] = useState(false);
+  // 实际用于渲染/截图的图片地址：优先用户照片，否则把主题背景图预加载为 dataURL
+  const [src, setSrc] = useState(photo || getThemeBg(theme.month));
 
-  const src = photo || getThemeBg(theme.month);
+  // 当主题或照片变化时，把（可能的）远程背景图提前转成 dataURL，
+  // 这样 html-to-image 截图时图片是本地数据源，不会因外链 CORS 失败。
+  useEffect(() => {
+    let cancel = false;
+    const target = photo || getThemeBg(theme.month);
+    setSrc(target);
+    if (!target || target.startsWith("data:")) return;
+    urlToDataUrl(target).then((url) => {
+      if (!cancel) setSrc(url);
+    });
+    return () => {
+      cancel = true;
+    };
+  }, [photo, theme.month]);
 
   const pickMedia = (mode) => {
     pendingMode.current = mode;
@@ -53,11 +68,28 @@ export default function Creator({
     if (!frameRef.current) return;
     setBusy(true);
     try {
+      // 确保相框里的 img 已加载完成，避免截到空白
+      const imgs = frameRef.current.querySelectorAll("img");
+      await Promise.all(
+        Array.from(imgs).map((img) =>
+          img.complete
+            ? Promise.resolve()
+            : new Promise((res, rej) => {
+                img.onload = () => res();
+                img.onerror = () => rej(new Error("图片加载失败"));
+              })
+        )
+      );
+      await new Promise((r) => setTimeout(r, 150)); // 给渲染留一拍
       const dataUrl = await captureFrame(frameRef.current);
       onShare(dataUrl);
     } catch (err) {
       console.error(err);
-      showToast("生成失败，请检查图片或重试");
+      showToast(
+        err && err.message === "图片加载失败"
+          ? "背景图片加载失败，请重新选择照片后重试"
+          : "生成失败，请检查图片或重试"
+      );
     } finally {
       setBusy(false);
     }
