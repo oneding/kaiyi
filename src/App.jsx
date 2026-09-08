@@ -54,7 +54,7 @@ export default function App() {
     <div className="app-shell">
       <div className="topbar">
         <div className="brand">
-          <span className="mark">K</span>
+          <img src="/logo.jpg" alt="KAIYI" className="mark-img" />
           <span>KAIYI</span>
         </div>
         <div className="month-picker">

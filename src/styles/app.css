@@ -68,16 +68,13 @@ body {
   font-size: 15px;
 }
 
-.brand .mark {
-  width: 26px;
-  height: 26px;
+.brand .mark-img {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
   border-radius: 8px;
-  background: linear-gradient(135deg, var(--accent), #7ee0d0);
-  display: grid;
-  place-items: center;
-  color: var(--ink);
-  font-weight: 900;
-  font-size: 15px;
+  display: block;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
 .month-picker {
