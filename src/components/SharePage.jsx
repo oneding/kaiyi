@@ -54,7 +54,23 @@ export default function SharePage({ theme, generated, onRedo, showToast }) {
     }
   };
 
-  const openPlatform = (p) => {
+  const openPlatform = async (p) => {
+    // 移动端：优先调起系统分享面板（含 Instagram / Facebook App，可带图分享）
+    if (canNativeShare && generated) {
+      try {
+        showToast(p === "instagram" ? "请在系统面板中选择 Instagram" : "请在系统面板中选择 Facebook");
+        const file = dataUrlToFile(generated, `kaiyi-${theme.month}.png`);
+        await navigator.share({
+          files: [file],
+          title: `KAIYI · ${theme.title}`,
+          text: caption,
+        });
+        return;
+      } catch (err) {
+        if (err && err.name === "AbortError") return; // 用户取消
+        // 调起失败则回落网页版
+      }
+    }
     const url =
       p === "instagram"
         ? "https://www.instagram.com/"
@@ -78,7 +94,23 @@ export default function SharePage({ theme, generated, onRedo, showToast }) {
     }
   };
 
-  const fbShare = () => {
+  const fbShare = async () => {
+    // 移动端：优先调起系统分享面板（含 Facebook App，可带图分享）
+    if (canNativeShare && generated) {
+      try {
+        showToast("请在系统面板中选择 Facebook");
+        const file = dataUrlToFile(generated, `kaiyi-${theme.month}.png`);
+        await navigator.share({
+          files: [file],
+          title: `KAIYI · ${theme.title}`,
+          text: caption,
+        });
+        return;
+      } catch (err) {
+        if (err && err.name === "AbortError") return; // 用户取消
+        // 调起失败则回落网页版
+      }
+    }
     const u = encodeURIComponent(shareUrl);
     const q = encodeURIComponent(caption);
     window.open(`https://www.facebook.com/sharer/sharer.php?u=${u}&quote=${q}`, "_blank");
